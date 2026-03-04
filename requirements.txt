@@ -1,1 +1,6 @@
 pandas
+requests
+smtplib
+email.message
+tkinter
+os
