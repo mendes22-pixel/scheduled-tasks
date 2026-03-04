@@ -1,38 +1,47 @@
-# To run and test the code you need to update 4 places:
-# 1. Change MY_EMAIL/MY_PASSWORD to your own details.
-# 2. Go to your email provider and make it allow less secure apps.
-# 3. Update the SMTP ADDRESS to match your email provider.
-# 4. Update birthdays.csv to contain today's month and day.
-# See the solution video in the 100 Days of Python Course for explainations.
+#Get API Key and latitude and longitude coordinates
+API_KEY = os.getenv("api_key")
+MY_LAT = 41.402360   #39.768450
+MY_LONG = -8.501508  #-86.156212
 
+#Define the "extracting" parameters according to the API
+parameters = {
+    "lat": MY_LAT,
+    "lon": MY_LONG,
+    "appid": API_KEY
+}
 
-from datetime import datetime
-import pandas
-import random
-import smtplib
-import os
+response = requests.get(url="https://api.openweathermap.org/data/2.5/forecast", params=parameters)
+#print("Status: ",response.status_code)
+weather_data = response.json()
 
-# import os and use it to get the Github repository secrets
-MY_EMAIL = os.environ.get("MY_EMAIL")
-MY_PASSWORD = os.environ.get("MY_PASSWORD")
+#Check if it will rain based on the id --> If<700 = rain
+will_rain = False
+for id_condition in weather_data["list"]:
+    weather_condition = id_condition["weather"][0]["id"]
+    if int(weather_condition) < 700:
+        weather_description = weather_data["list"][0]["weather"][0]["description"].title()
+        weather_temperature = int(weather_data["list"][0]["main"]["temp_kf"])
+        weather_temperature_celsius = (weather_temperature-32)/1.8
 
-today = datetime.now()
-today_tuple = (today.month, today.day)
+        will_rain = True
 
-data = pandas.read_csv("birthdays.csv")
-birthdays_dict = {(data_row["month"], data_row["day"])                  : data_row for (index, data_row) in data.iterrows()}
-if today_tuple in birthdays_dict:
-    birthday_person = birthdays_dict[today_tuple]
-    file_path = f"letter_templates/letter_{random.randint(1, 3)}.txt"
-    with open(file_path) as letter_file:
-        contents = letter_file.read()
-        contents = contents.replace("[NAME]", birthday_person["name"])
+if will_rain:
+    #Set up email adress
+    MY_EMAIL = "conta1.python@gmail.com"
+    FINAL_EMAIL = "conta2.python@yahoo.com"
+    MY_PASSWORD = os.getenv("my_password")
 
-    with smtplib.SMTP("YOUR EMAIL PROVIDER SMTP SERVER ADDRESS") as connection:
+    #Send email
+    with smtplib.SMTP(host="smtp.gmail.com", port=587) as connection:
+        msg = EmailMessage()
+        msg["From"] = MY_EMAIL
+        msg["To"] = FINAL_EMAIL
+        msg["Subject"] = "WEATHER CONDITIONS"
+        msg.set_content(f'It is going to rain today🌧️\n\nDescription: {weather_description}\nTemperature: {weather_temperature_celsius:.2f}ºC')
+
         connection.starttls()
-        connection.login(MY_EMAIL, MY_PASSWORD)
-        connection.sendmail(
-            from_addr=MY_EMAIL,
-            to_addrs=birthday_person["email"],
-            msg=f"Subject:Happy Birthday!\n\n{contents}"
-        )
+        connection.login(user=MY_EMAIL, password=MY_PASSWORD)
+        connection.send_message(msg)
+else:
+    messagebox.showinfo(title="WEATHER CONDITION 🌤️", message=f'Description: {weather_description}\nTemperature: {weather_temperature:.2f}ºC')
+    
