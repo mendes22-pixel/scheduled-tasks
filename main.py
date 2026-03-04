@@ -27,8 +27,8 @@ for id_condition in weather_data["list"]:
 
 if will_rain:
     #Set up email adress
-    MY_EMAIL = "conta1.python@gmail.com"
-    FINAL_EMAIL = "conta2.python@yahoo.com"
+    MY_EMAIL = os.getenv("my_email")
+    FINAL_EMAIL = os.getenv("final_email")
     MY_PASSWORD = os.getenv("my_password")
 
     #Send email
@@ -44,4 +44,3 @@ if will_rain:
         connection.send_message(msg)
 else:
     messagebox.showinfo(title="WEATHER CONDITION 🌤️", message=f'Description: {weather_description}\nTemperature: {weather_temperature:.2f}ºC')
-    
